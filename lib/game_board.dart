@@ -143,7 +143,10 @@ class GameBoard {
 
     // No flippable opponent pieces were found in any directions. This is not a
     // legal move.
-    print("Illegal move!");
+//    player == PieceType.black
+//        ? print("Illegal move!")
+//        : print("PC is thinking");
+
     return false;
   }
 
