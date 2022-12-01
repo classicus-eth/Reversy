@@ -1,0 +1,714 @@
+openapi: 3.1.0
+info:
+  title: ARCx Developer Docs
+  summary: A collection of public endpoints provided by ARCx.
+  version: 1.0.0
+  description: >
+    # Introduction
+
+    Welcome to the ARCx Developer Docs!
+    
+    ARCx provides public endpoints related to web3 reputation. We quantify reputation by creating a `Score` which ties together a numerical value (called `score`), an `account` and a `protocol`.
+    
+    Let's explain each component: 
+      - `account`: a string representing a 42-character hexadecimal EVM address.
+      - `protocol`: a string representing the name of a protocol. (e.g. `arcx.credit`, `arcx.loyalty`, `hello.world.foo.bar`)
+      - `score`: a string representing a uint256 number quantifying the reputation of an `account` on a given `protocol`. (e.g. `100`, `45000000000000`, `75000`)
+    
+    Score example:
+
+    ```
+    
+    {
+      "account": "0x38daea6f17e4308b0da9647db9ca6d84a3a7e195"
+      "protocol": "arcx.loyalty"
+      "score": "750"
+    }
+
+    ```
+
+    In this case, we'd say that `0x38daea6f17e4308b0da9647db9ca6d84a3a7e195` has an `arcx.loyalty` score of `750`. 
+    In our ecosystem, this account would receive better loyalty rewards compared to its peers with a lower `arcx.loyalty` score. This can be through airdrops, better rates in smart contracts, etc.
+    This means an `account` can have a `score` with many different `protocols`. However, there will only ever be one `score` per `account` per `protocol`.
+
+
+    The API also provides analytics functionality. You can use it to store events to be analyzed by the ARCx data team.
+    In order to use this functionality, please contact us to initiate the collaboration process.
+
+    # Usage
+
+    Base URI: `https://api.arcx.money/v1/`
+
+
+    Here are a few use cases provided that are satisfied by the existing endpoints:
+
+    ## Scores use cases
+
+      - Get all the scores of a given `account`
+      - Get all the scores of a given `protocol`
+      - Get all the scores of a given `protocol` in `full` format to see additional metadata
+      - Get the score of a given `account` and `protocol`
+      - Get the score of a given `account` and `protocol` in `proof` format for smart contract use
+
+    ## Protocols use cases
+
+      - Get all protocol metadatas
+      - Get the protocol metadata of a given `name`
+
+    ## Analytics use cases
+
+      - Start web `identities`
+      - Submit `events` associated with an `identity` 
+
+    _Note: This API is a work in progress and is subject to change._
+
+  contact:
+    name: "ARCx Team"
+    url: "https://wiki.arcx.money"
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+  - url: https://api.arcx.money/v1
+    description: Production server
+  - url: https://staging.api.arcx.money/v1
+    description: Staging server
+ 
+tags:
+  - name: analytics
+    description: 'In order to integrate a client with our `analytics`, you can either generate a new identity or restore a previously existing identity.
+      After an `identityId` has been emitted, any custom event can be submitted to our `analytics` endpoint so that further analysis can be performed by the ARCx team.
+      To be granted an API key, simply get in touch with the ARCx team.'
+  - name: scores
+    description: Access to scores computed by ARCx
+  - name: protocols
+    description: Operations about our protocols
+
+paths:
+  /scores:
+    get:
+      tags:
+        - scores
+      summary: Get scores by account or protocol
+      description: >
+        Returns all scores of a given `account` or `protocol`. 
+        There are additional query parameters for pagination, filtering and sorting.
+        
+
+        **Important: One of `account` or `protocol` must be provided.**
+      operationId: getScores
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  current:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Score'
+              examples:
+                format-simple:
+                  summary: Simple scores
+                  description: Query params include `format=simple`. Maximum limit of `50000`. Default format. 
+                  value: |
+                    {
+                      "total": 1,
+                      "current": 1,
+                      "limit": 50000,
+                      "offset": 0,
+                      "data": [
+                          {
+                              "account": "0x38daea6f17e4308b0da9647db9ca6d84a3a7e195",
+                              "protocol": "arcx.loyalty",
+                              "score": "750"
+                          }
+                      ]
+                    }
+
+                
+                format-proof:
+                  summary: Proof scores
+                  description: Query params include `format=proof`. Maximum limit of `5000`.
+                  value: |
+                    {
+                      "total": 1,
+                      "current": 1,
+                      "limit": 5000,
+                      "offset": 0,
+                      "data": [
+                          {
+                              "account": "0x38daea6f17e4308b0da9647db9ca6d84a3a7e195",
+                              "protocol": "0x617263782e6372656469744c696d697400000000000000000000000000000000",
+                              "score": "750",
+                              "merkleProof": [
+                                  "0x3235ae1a08272a63394eebafc280b502c7bf63d95f01e11a23c1488da7173f93",
+                                  "0xe26c0f2079f4e8ef9cbee303a9c780e8470c29dda0d351b9de6de130b4e96e60",
+                                  "0xcbee53136ce332132b78ad4645d5eea9e52d964b435c76b887b3fc7ba377a95f",
+                                  "0x9d150569edc71abe23d62485ca70f2eb0df861acced508a9d6221ff25c92fe4b",
+                                  "0x3ee905fa62719a4a9ee21e68637df26b6e3e667dfe24a09e6e9560d2aa0f6cfd",
+                                  "0xd096ebb1205d8f0ae26630f8537d34d9fc17589bf07cce5ea67e33c535bbeaf6",
+                                  "0xee17b81d7d528c44c488c983e9ed01ce04a09fec0e7bd14dfce673fe21525ecc",
+                                  "0x50fa0fc620f6368398831b12e4681e5667981d0fe89352f857ed8eaec0134797",
+                                  "0x9b22a4b3fbd0397bb5a2426af4694cd77fb9589db8622123e019283637d15e48",
+                                  "0x8e1c146ac11f4080e89ece769398bc9e2fd4c2d4c9576ec0dd8fdaf18900257c",
+                                  "0xa9dd72524b43dcc759dcd2c753c8ba1ed122b328ae9f7d6b1f1602a229dfe333",
+                                  "0x787a81cbbecb3e327eca228a0e51c65d43609a2b240924d57f938eead53b3d7d",
+                                  "0x28be28a38d4988de35f5683c125fa64fe88d4e691e3f8759f46254201e385e22",
+                                  "0x7252a1521b295cb07d00059e3bd3feb1e61239af75d9b496846c5cd4850edea1",
+                                  "0x86a3dd8e884743f343ab77ea5239b0ddb81b321f6f0466cbb016d7fd98c6be4b"
+                              ]
+                          }
+                      ]
+                    }
+        
+                format-full:
+                  summary: Full scores
+                  description: Query params include `format=full`. Maximum limit of `1000`.
+                  value: |
+                    {
+                      "total": 1,
+                      "current": 1,
+                      "limit": 1000,
+                      "offset": 0,
+                      "data": [
+                        {
+                          "account": "0x38daea6f17e4308b0da9647db9ca6d84a3a7e195",
+                          "protocol": "arcx.loyalty",
+                          "score": "725",
+                          "metadata": {
+                            "rank": 1,
+                            "percentile": 99.96,
+                            "explanations": [
+                              {
+                                "id": "arcx.snapshotGovernance",
+                                "suggestion": "Continue to participate in ARCx governance (snapshot.org/#/arcx.eth)",
+                                "explanation": "Participated in 7 ARCx Snapshot proposals.",
+                                "impact": "+ 525"
+                              },
+                              {
+                                "id": "arcx.farmed",
+                                "suggestion": "",
+                                "explanation": "Particpated in an ARCx yield farm.",
+                                "impact": "+ 50"
+                              },
+                              {
+                                "id": "arcx.kyf",
+                                "suggestion": "",
+                                "explanation": "Participated in Know Your Farmer V1 in September 2020.",
+                                "impact": "+ 50"
+                              },
+                              {
+                                "id": "arcx.migrateGovernance",
+                                "suggestion": "",
+                                "explanation": "Migrated from the pre-split token to the post-split token.",
+                                "impact": "+ 50"
+                              },
+                              {
+                                "id": "arcx.staked",
+                                "suggestion": "",
+                                "explanation": "Staked ARCx token to receive stARCx.",
+                                "impact": "+ 50"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                
+        400:
+          $ref: '#/components/responses/BadRequest'
+        404:
+          $ref: '#/components/responses/NotFound'
+        5xx:
+          $ref: '#/components/responses/ServerError'
+      parameters:
+        - name: account
+          in: query
+          description: 42-character hexadecimal EVM address. Required when `protocol` is ommited. <br/> <br/>
+          required: true
+          schema:
+            type: string
+          example: '0x38daea6f17e4308b0da9647db9ca6d84a3a7e195'
+        - name: protocol
+          in: query
+          description: The name of a protocol. Required when `account` is ommited. <br/> <br/>
+          required: true
+          schema:
+            type: string
+          example: 'arcx.loyalty'
+        - name: format
+          in: query
+          description: Specifies the format of each score. Dynamicly sets `limit` parameter. Defaults to `simple`.
+          required: false
+          schema:
+            type: string
+            enum:
+              - simple
+              - full
+              - proof
+          example: null
+        - name: sortBy
+          in: query
+          description: Determines the sorted field of returned scores. Defaults to `account`.
+          required: false
+          schema:
+            type: string
+            enum:
+              - rank
+              - account
+          example: null
+        - name: sortOrder
+          in: query
+          description: Determines the sorted order of the response. Defaults to `asc`.
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+          example: null
+        - name: limit
+          in: query
+          description: The limit of scores for pagination. Set dynamicly by `format` parameter. Defaults to `50000` for `simple`, `5000` for `proof` and `1000` for `full`.
+          required: false
+          schema:
+            type: integer
+          example: null
+        - name: offset
+          in: query
+          description: The offset of scores for pagination. Defaults to `0`.
+          required: false
+          schema:
+            type: integer
+          example: null
+        - name: greaterThan
+          in: query
+          description: Ensures returned scores are greater than provided value.
+          required: false
+          schema:
+            type: integer
+          example: null
+        - name: lessThan
+          in: query
+          description: Ensures returned scores are less than provided value.
+          schema:
+            type: integer
+          example: null
+
+  /protocols:
+    get:
+      tags:
+        - protocols
+      summary: Get protocols by name
+      description: >
+        Returns a list of protocols. An optional `names` query parameter can be used to filter the list of protocols returned. 
+      operationId: getProtocols
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  current:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiScoreAttributes'
+              example: |
+                    {
+                      "total": 1,
+                      "current": 1,
+                      "data": [
+                        {
+                          "name": "arcx.loyalty",
+                          "nameByte32": "0x617263782e6c6f79616c74790000000000000000000000000000000000000000",
+                          "categories": {},
+                          "defaults": [
+                            {
+                              "id": "arcx.staked",
+                              "explanation": "Not staking any ARCx tokens for stARCx.",
+                              "suggestion": "Stake ARCx tokens (app.arcx.money/staking)."
+                            },
+                            {
+                              "id": "arcx.snapshotGovernance",
+                              "explanation": "Never participated in ARCx Governance before.",
+                              "suggestion": "Participate in ARCx governance (snapshot.org/#/arcx.eth)."
+                            }
+                          ],
+                          "externalUri": "https://wiki.arcx.money/",
+                          "title": "ARCx Loyalty Score",
+                          "active": true,
+                          "description": "This score represents your loyalty to the ARCx network dating back to Sept 2020.",
+                          "sources": [
+                            "ethereum",
+                            "snapshot"
+                          ],
+                          "max": "725",
+                          "min": "0",
+                          "populations": [
+                            "2546",
+                            "347",
+                            "111",
+                            "52",
+                            "18",
+                            "9",
+                            "10",
+                            "4",
+                            "2",
+                            "2"
+                          ],
+                          "ranges": [
+                            [
+                              "0.0",
+                              "72.5"
+                            ],
+                            [
+                              "72.5",
+                              "145.0"
+                            ],
+                            [
+                              "145.0",
+                              "217.5"
+                            ],
+                            [
+                              "217.5",
+                              "290.0"
+                            ],
+                            [
+                              "290.0",
+                              "362.5"
+                            ],
+                            [
+                              "362.5",
+                              "435.0"
+                            ],
+                            [
+                              "435.0",
+                              "507.5"
+                            ],
+                            [
+                              "507.5",
+                              "580.0"
+                            ],
+                            [
+                              "580.0",
+                              "652.5"
+                            ],
+                            [
+                              "652.5",
+                              "725.0"
+                            ]
+                          ]
+                        }
+                      ]
+                    }
+        400:
+          $ref: '#/components/responses/BadRequest'
+        5xx:
+          $ref: '#/components/responses/ServerError'
+         
+      parameters:
+        - name: names
+          in: query
+          description: List of comma separated protocol names. Returns all protocols when ommited.
+          required: false
+          schema:
+            type: string
+          example: arcx.credit,arcx.loyalty
+
+  /identify:
+    post:
+      tags:
+        - analytics
+      summary: Identify
+      description: >
+        Identify user. This endpoint will generate an `identityId`, which can then be associated with `event` requests. The returned `identityId` is thus required in subsequent `event` requests.
+      operationId: identify
+      servers:
+        - url: https://staging.api.arcx.money/v1
+          description: Staging server
+      parameters:
+        - $ref: '#/components/parameters/ApiHeader'
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+              example: 1e168ae8459f109cac4453d5
+        400:
+          $ref: '#/components/responses/BadRequest'
+        5xx:
+          $ref: '#/components/responses/ServerError'
+      x-code-samples:
+        - lang: js
+          label: 'JavaScript'
+          source: |
+            const response = await fetch(`${arcxUrl}/v1/identify`, {
+              method: 'POST',
+              headers: {
+                'x-api-key': 'ARCX_ANALYTICS_API_KEY'
+                'Content-Type': 'application/json; charset=UTF-8',
+              },
+            })
+            const identityId = await response.json()
+        - lang: js
+          label: 'SDK'
+          source: |
+            import { ArcxAnalyticsSdk } from '@arcxmoney/analytics'
+            const arcxAnalyticsSdk = await ArcxAnalyticsSdk.init(YOUR_API_KEY)
+  /submit-event:
+    post:
+      tags:
+        - analytics
+      summary: Save event
+      description: >
+        Save a custom `event`. This request should contain the `identityId` returned by the `/identify` endpoint. 
+        This endpoint returns the `identityId` with which this event will be associated to. In case the `identityId` passed is expired, this will return a new `identityId` to be used in subsequent calls.
+      operationId: saveEvent
+      x-code-samples:
+        - lang: js
+          label: 'JavaScript'
+          source: |
+            const response = await fetch(`${arcxUrl}/v1/submit-event`, {
+              method: 'POST',
+              headers: {
+                'x-api-key': 'ARCX_ANALYTICS_API_KEY'
+                'Content-Type': 'application/json; charset=UTF-8',
+              },
+              body: JSON.stringify({
+                identityId,
+                event: 'DOC_EXAMPLE',
+                attributes: {
+                  prop1: 'Useful information'
+                },
+              })
+            })
+            const identityId = await response.json()
+        - lang: js
+          label: 'SDK'
+          source: |
+            import { ArcxAnalyticsSdk } from '@arcxmoney/analytics'
+            const arcxAnalyticsSdk = await ArcxAnalyticsSdk.init(YOUR_API_KEY)
+            await arcxAnalyticsSdk.event('EXAMPLE_EVENT', {
+              attribute: 'random',
+              anotherAttribute: 'value',
+            })
+      parameters:
+        - $ref: '#/components/parameters/ApiHeader'
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+              example: 9bde4268c3b4a653000a5897
+        400:
+          $ref: '#/components/responses/BadRequest'
+        5xx:
+          $ref: '#/components/responses/ServerError'
+      servers:
+        - url: https://staging.api.arcx.money/v1
+          description: Staging server
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'
+
+components:
+  parameters:
+    ApiHeader:
+      name: 'x-api-key'
+      in: header
+      description: 64-character uid api value. <br/> <br/>
+      required: true
+      schema:
+        type: string
+      example: 'a783dc7f9b75dc7ab25d920e7f8523841c24f7523be31ee05446d59e9992e46e'
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+    ServerError:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+  schemas:
+    Event:
+      type: object
+      required:
+        - identityId
+        - event
+      properties:
+        identityId:
+          description: 24-character hexadecimal of identified user
+          example: 1e168ae8459f109cac4453d5
+          type: string
+        event:
+          type: string
+          example: DOC_EXAMPLE
+          description: Name of the event
+        attributes:
+          type: object
+          example: { "someKey": "Useful information"}
+          description: Additional information related to the event, supporting the analysis. Max object depth allowed => 2
+    ScoreExplanation:
+      type: object
+      properties:
+        id:
+          type: string
+        suggestion:
+          type: string
+        explanation:
+          type: string
+        impact:
+          type: string
+        source:
+          type: string
+        timestamp:
+          type: string
+        transactionId:
+          type: string
+    Score:
+      type: object
+      required:
+        - account
+        - protocol
+        - score
+      properties:
+        account:
+          type: string
+        protocol:
+          type: string
+        score:
+          type: string
+        merkleProof:
+          type: array
+          items:
+            type: string
+        metadata:
+          $ref: '#/components/schemas/ScoreMetadata'
+    ScoreMetadata:
+      type: object
+      required:
+        - rank
+        - percentile
+        - explanations
+      properties:
+        rank:
+          type: integer
+        percentile:
+          type: integer
+        explanations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScoreExplanation'
+    ApiScoreAttributes:
+      type: object
+      required:
+        - name
+        - nameByte32
+        - active
+        - title
+        - desciption
+        - externalUri
+        - sources
+        - categories
+        - defaults
+        - population
+        - max
+        - min
+        - ranges
+      properties:
+        name:
+          type: string
+        nameByte32:
+          type: string
+        active:
+          type: boolean
+        title:
+          type: string
+        desciption:
+          type: string
+        externalUri:
+          type: array
+          items:
+            type: string
+        sources:
+          type: array
+          items:
+            type: string
+        categories:
+          $ref: '#/components/schemas/ScoreCategories'
+        defaults:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScoreExplanation'
+        population:
+          type: array
+          items:
+            type: string
+        max:
+          type: string
+        min:
+          type: string
+        ranges:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+    CategoryProperties:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        uri:
+          type: string
+    ScoreCategories:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/CategoryProperties'
